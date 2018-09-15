@@ -4,7 +4,7 @@ This is an extension of the original code to account for 3D volumetric images. T
 (https://github.com/AnmolChachra/Stride-and-Slice-Images) uses OpenCV to read and write images. This code uses Nibabel
 and tifffile packages in addition to OpenCV.
 
-========================================================================================================================
+---
 
 Below is the original documentation on Stride-and-Slice-Images:
 
@@ -34,4 +34,4 @@ How to run the script?
     - import strideslice as ss
     - ss.transform()
  
-========================================================================================================================
+---
