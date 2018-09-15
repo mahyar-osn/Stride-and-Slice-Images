@@ -1,27 +1,27 @@
 import numpy as np
 import cv2
 import os
-from PIL import Image
 import tifffile
 import nibabel as nib
 
-
-filename = 'CTHead.tif'
+nibfile = False
+tiffile = False
 
 
 def read_images(dir_path):
     Images = []
     image_names = sorted(os.listdir(dir_path))
     for im in image_names:
-        # image = cv2.imread(os.path.join(dir_path, im))
-        # image_tmp = Image.open(os.path.join(dir_path, im))
-        # image_tmp = tifffile.imread(os.path.join(dir_path, im))
-        if im.endswith(filename):
-            print(im)
+        if im.endswith('tif') or im.endswith('tiff'):
+            tiffile = True
+            image_tmp = tifffile.imread(os.path.join(dir_path, im))
+            image = image_tmp.T
+        elif im.endswith('nii') or im.endswith('nii.gz'):
+            nibfile = True
             image = nib.load(os.path.join(dir_path, im))
-            # image = np.asarray(image_tmp)
-            # image = image_tmp.T
-            Images.append(image)
+        else:
+            image = cv2.imread(os.path.join(dir_path, im))
+        Images.append(image)
     return Images
 
 
@@ -70,7 +70,6 @@ def Padding_op(Image, strides, offset_x, offset_y):
     """
     padding_x = strides[0] - offset_x
     padding_y = strides[1] - offset_y
-    # print(padding_x,padding_y)
     Padded_Image = np.zeros(shape=(Image.shape[0] + padding_x, Image.shape[1] + padding_y, Image.shape[2]),
                             dtype=Image.dtype)
     Padded_Image[padding_x // 2:(padding_x // 2) + (Image.shape[0]), padding_y // 2:(padding_y // 2) + Image.shape[1],
@@ -87,28 +86,46 @@ def Convolution_op(Image, size, strides):
     :param strides:
     :return: List of cropped images
     """
+    volumetric = False
+    if len(Image) > 2:
+        volumetric = True
+
     start_x = 0
     start_y = 0
-    start_z = 0
-    end_x = Image.shape[0] - size[0]
-    end_y = Image.shape[1] - size[1]
-    end_z = Image.shape[2] - size[2]
-
     n_rows = Image.shape[0] // strides[0]
     n_columns = Image.shape[1] // strides[1]
-    n_depths = Image.shape[2] // strides[2]
+
+    if volumetric:
+        start_z = 0
+        n_depths = Image.shape[2] // strides[2]
 
     small_images = []
-    for i in range(n_rows - 1):
-        for j in range(n_columns - 1):
-            for k in range(n_depths - 1):
-                new_start_x = start_x + i * strides[0]
-                new_start_y = start_y + j * strides[1]
-                new_start_z = start_z + k * strides[2]
-                # small_images.append(Image[new_start_x:new_start_x + size[0], new_start_y:new_start_y + size[1], :])
-                small_image_temp = Image.get_fdata()[new_start_x:new_start_x + size[0], new_start_y:new_start_y + size[1], new_start_z:new_start_z + size[2]]
-                small_image_temp_1 = nib.Nifti1Image(small_image_temp, Image.affine)
-                small_images.append(small_image_temp_1)
+
+    if volumetric:
+        for i in range(n_rows):
+            for j in range(n_columns):
+                for k in range(n_depths):
+                    new_start_x = start_x + i * strides[0]
+                    new_start_y = start_y + j * strides[1]
+                    new_start_z = start_z + k * strides[2]
+                    if nibfile:
+                        small_image_temp = Image.get_fdata()[new_start_x:new_start_x + size[0], new_start_y:new_start_y + size[1], new_start_z:new_start_z + size[2]]
+                        small_image_temp_1 = nib.Nifti1Image(small_image_temp, Image.affine)
+                        small_images.append(small_image_temp_1)
+                    else:
+                        small_images.append(Image[new_start_x:new_start_x + size[0], new_start_y:new_start_y + size[1], new_start_z:new_start_z + size[2]])
+    else:
+        for i in range(n_rows):
+            for j in range(n_columns):
+                    new_start_x = start_x + i * strides[0]
+                    new_start_y = start_y + j * strides[1]
+                    if nibfile:
+                        small_image_temp = Image.get_fdata()[new_start_x:new_start_x + size[0], new_start_y:new_start_y + size[1]]
+                        small_image_temp_1 = nib.Nifti1Image(small_image_temp, Image.affine)
+                        small_images.append(small_image_temp_1)
+                    else:
+                        small_images.append(Image[new_start_x:new_start_x + size[0], new_start_y:new_start_y + size[1]])
+
     return small_images
 
 
