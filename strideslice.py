@@ -4,20 +4,24 @@ import os
 import tifffile
 import nibabel as nib
 
-nibfile = False
-tiffile = False
+config = dict()
+config['nibfile'] = False
+config['tiffile'] = False
+config['volumetric'] = False
 
 
 def read_images(dir_path):
     Images = []
     image_names = sorted(os.listdir(dir_path))
     for im in image_names:
+        if len(im) > 2:
+            config['volumetric'] = True
         if im.endswith('tif') or im.endswith('tiff'):
-            tiffile = True
+            config['tiffile'] = True
             image_tmp = tifffile.imread(os.path.join(dir_path, im))
             image = image_tmp.T
         elif im.endswith('nii') or im.endswith('nii.gz'):
-            nibfile = True
+            config['nibfile'] = True
             image = nib.load(os.path.join(dir_path, im))
         else:
             image = cv2.imread(os.path.join(dir_path, im))
@@ -39,9 +43,13 @@ def save_images(transformed, save_dir):
             path = os.path.join(save_dir, dir_name)
             if not os.path.exists(path):
                 os.mkdir(path)
-            nib.save(j, os.path.join(path, str(i + 1) + '.nii.gz'))
+            if config['nibfile']:
+                nib.save(j, os.path.join(path, str(i + 1) + '.nii.gz'))
+            elif config['tiffile']:
+                tifffile.imsave(os.path.join(path, str(i + 1) + '.tiff'), j)
+            else:
+                 cv2.imwrite(os.path.join(path, str(i+1)+'.png'), j)
             k+=1
-            # tifffile.imsave(os.path.join(path, str(i + 1) + '.tiff'), j)
 
 
 def Offset_op(input_length, output_length, stride):
@@ -68,6 +76,9 @@ def Padding_op(Image, strides, offset_x, offset_y):
     :param offset_y:
     :return: Padded image
     """
+    if config['volumetric']:
+        raise Exception("3D Padding not yet implemented!")
+
     padding_x = strides[0] - offset_x
     padding_y = strides[1] - offset_y
     Padded_Image = np.zeros(shape=(Image.shape[0] + padding_x, Image.shape[1] + padding_y, Image.shape[2]),
@@ -86,29 +97,26 @@ def Convolution_op(Image, size, strides):
     :param strides:
     :return: List of cropped images
     """
-    volumetric = False
-    if len(Image) > 2:
-        volumetric = True
 
     start_x = 0
     start_y = 0
     n_rows = Image.shape[0] // strides[0]
     n_columns = Image.shape[1] // strides[1]
 
-    if volumetric:
+    if config['volumetric']:
         start_z = 0
         n_depths = Image.shape[2] // strides[2]
 
     small_images = []
 
-    if volumetric:
+    if config['volumetric']:
         for i in range(n_rows):
             for j in range(n_columns):
                 for k in range(n_depths):
                     new_start_x = start_x + i * strides[0]
                     new_start_y = start_y + j * strides[1]
                     new_start_z = start_z + k * strides[2]
-                    if nibfile:
+                    if config['nibfile']:
                         small_image_temp = Image.get_fdata()[new_start_x:new_start_x + size[0], new_start_y:new_start_y + size[1], new_start_z:new_start_z + size[2]]
                         small_image_temp_1 = nib.Nifti1Image(small_image_temp, Image.affine)
                         small_images.append(small_image_temp_1)
@@ -119,7 +127,7 @@ def Convolution_op(Image, size, strides):
             for j in range(n_columns):
                     new_start_x = start_x + i * strides[0]
                     new_start_y = start_y + j * strides[1]
-                    if nibfile:
+                    if config['nibfile']:
                         small_image_temp = Image.get_fdata()[new_start_x:new_start_x + size[0], new_start_y:new_start_y + size[1]]
                         small_image_temp_1 = nib.Nifti1Image(small_image_temp, Image.affine)
                         small_images.append(small_image_temp_1)
@@ -159,8 +167,6 @@ def transform(source_dir, size, strides=[None, None, None], PADDING=False):
         else:
             Images = read_images(source_dir)
 
-        im_size = image_size(Images[0])
-        num_images = len(Images)
         transformed_images = dict()
         Images = np.array(Images)
         if PADDING:
@@ -240,8 +246,8 @@ def transform(source_dir, size, strides=[None, None, None], PADDING=False):
 
 def main():
     source_dir = './data/3D'
-    size = (12, 12, 10)
-    strides = [5, 5, 2]
+    size = (100, 100, 50)
+    strides = [95, 95, 48]
     padding = False
     grid_images = transform(source_dir, size, strides=strides, PADDING=padding)
 
@@ -251,4 +257,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    print('done')
