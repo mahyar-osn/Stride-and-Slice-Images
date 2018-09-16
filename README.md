@@ -1,4 +1,4 @@
-# Stride-and-Slice-Images - 3D volumetric images
+# Stride-and-Slice-Images - 2D & 3D images
 
 This is an extension of the original code to account for 3D volumetric images. The original code by AnmolChachra
 (https://github.com/AnmolChachra/Stride-and-Slice-Images) uses OpenCV to read and write images. This code uses Nibabel
