@@ -6,7 +6,7 @@ and tifffile packages in addition to OpenCV.
 
 ---
 
-Below is the original documentation on Stride-and-Slice-Images:
+Below is the original documentation on Stride-and-Slice-Images (with some minor modifications):
 
 This blog will explain the code and equations mentioned in the code. Give it a read before going ahead.
 Blog - https://codeitplease.wordpress.com/2018/02/26/striding-and-slicing-images/
@@ -17,9 +17,10 @@ The script contains a 'transform' function that takes 'source_dir', 'size', 'str
 
 'source_dir' - Can be a directory path to a single image or a directory path to a directory containg multiple images.
 
-'size' - tuple of desired height and width e.g. (100,100)
+'size' - tuple of desired height and width e.g. (100,100) in case of 2D and (100, 100, 100) in case of 3D
 
-'strides' - tuple of desired stride along height and stride along width, e.g. (100,100)
+'strides' - tuple of desired stride along height and stride along width, e.g. (100,100) in case of 2D and (100, 100, 100) in case of 3D
+
 
 'PADDING' - (default False) If set True will calculate appropriate padding that will give you complete images with respect to the given strides.
 
@@ -35,3 +36,8 @@ How to run the script?
     - ss.transform()
  
 ---
+# Example data:
+1) A volumetric CT data from The Stanford volume data archive (https://graphics.stanford.edu/data/voldata/)
+in TIFF format.
+
+other 2D and 3D example data will be added in near future.
