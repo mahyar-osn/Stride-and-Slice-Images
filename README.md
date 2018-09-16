@@ -40,4 +40,4 @@ How to run the script?
 1) A volumetric CT data from The Stanford volume data archive (https://graphics.stanford.edu/data/voldata/)
 in TIFF format.
 
-other 2D and 3D example data will be added in near future.
+Other 2D and 3D example data will be added in near future.
