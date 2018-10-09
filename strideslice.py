@@ -170,7 +170,8 @@ def transform(source_dir, size, strides=[None, None, None], PADDING=False):
         transformed_images = dict()
         Images = np.array(Images)
         if PADDING:
-            raise Exception("3D not yet implemented!")
+            if config["volumetric"]:
+                raise Exception("3D not yet implemented!")
 
             padded_images = []
 
